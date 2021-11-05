@@ -41,6 +41,7 @@ yolov3
 │  │  └─ Results.csv
 │  └─ Weights
 │     └─ README.md
-├─ run.sh
+├─ run_gpu.sh
+├─ run_no_gpu.sh
 ├─ detect_new.py
 ```

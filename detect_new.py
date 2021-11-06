@@ -220,7 +220,7 @@ def modelInference(framesToInfer):
                     if currentFrameNumber in framesToInfer:
                         print(f'Doing inference on frame number {currentFrameNumber}')
 
-                        # Create ImageDetection object to store object class and bbox
+                        # Create ImageDetection object to store object class and bbox and confidence
                         conf = f'{conf:.2f}'
                         currentDetection = ImageDetection(names[c], xywh, conf)
 

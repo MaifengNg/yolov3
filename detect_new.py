@@ -2,7 +2,7 @@
 import argparse
 from pathlib import Path
 import os
-
+import sys
 import torch
 # from IPython.display import Image, clear_output
 
@@ -23,18 +23,67 @@ import datetime
 CWD = os.getcwd()
 ROOT_FOLDER = os.path.join(CWD, "Assignment3")
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "Data")
+JSON_FOLDER = os.path.join(ROOT_FOLDER, "JSON")
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "Weights")
+
+# video file name in data folder
+default_video_name = None
+
+all_file_name_in_data_folder = os.listdir(DATA_FOLDER)
+for file_name in all_file_name_in_data_folder:
+    # if the file name contains an avi extension
+    # we assume this is the video of interest avi file
+    if file_name != 'README.md' and '.avi' in file_name:
+        default_video_name = file_name
+        print(f'Found video of interest file {default_video_name}')
+
+if default_video_name is None:
+    sys.exit('No video file name in yolov3/Assignment3/Data directory.'
+             '\n'
+             'Please place the video of interest avi file into yolov3/Assignment3/Data directory')
+
+# frames of interest name in json folder
+default_json_name = None
+all_file_name_in_json_folder = os.listdir(JSON_FOLDER)
+for file_name in all_file_name_in_json_folder:
+    # if the file name contains a json extension
+    # we assume this is the frames of interest json file
+    if file_name != 'README.md' and '.json' in file_name:
+        default_json_name = file_name
+        print(f'Found frames of interest file {default_json_name}')
+
+# we exit the program is no frames of interest json file is added to  yolov3/Assignment3/JSON
+if default_json_name is None:
+    sys.exit('No json file name in yolov3/Assignment3/JSON directory.'
+             '\n'
+             'Please place the frames of interest json file into yolov3/Assignment3/JSON directory')
+
+# weights file name in weights folder
+default_weights_name = None
+all_file_name_in_weights_folder = os.listdir(WEIGHTS_FOLDER)
+for file_name in all_file_name_in_weights_folder:
+    # if the file name contains a json extension
+    # we assume this is the frames of interest json file
+    if file_name != 'README.md' and '.pt' in file_name:
+        default_weights_name = file_name
+        print(f'Found weights file {default_weights_name}')
+
+# we exit the program if no weights file is added to  yolov3/Assignment3/Weights
+if default_weights_name is None:
+    sys.exit('No json file name in yolov3/Assignment3/Weights directory.'
+             '\n'
+             'Please place the frames of interest json file into yolov3/Assignment3/Weights directory')
 
 # adding arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--weights', nargs='+', type=str, default='best.pt', help='model.pt path(s)')
-parser.add_argument('--source', type=str, default='horizon_1_ship.avi', help='source')
-parser.add_argument('--frames', type=str, default='horizon_1_ship.json', help='frames to infer json format')
+parser.add_argument('--weights', nargs='+', type=str, default=default_weights_name, help='model.pt path(s)')
+parser.add_argument('--source', type=str, default=default_video_name, help='source')
+parser.add_argument('--frames', type=str, default=default_json_name, help='frames to infer json format')
 opt = parser.parse_args()
 
 video_name = opt.source
 VIDEO_TO_INFER_DIR = os.path.join(DATA_FOLDER, video_name)
-
-FRAMES_TO_INFER_JSON = os.path.join(ROOT_FOLDER, "JSON", opt.frames)
+FRAMES_TO_INFER_JSON = os.path.join(JSON_FOLDER, opt.frames)
 
 # outputs
 SAVE_RESULTS_DIR = os.path.join(ROOT_FOLDER, "Results")
@@ -43,7 +92,7 @@ video_name_no_ext = video_name.replace(".avi", "")
 CSV_DIR = os.path.join(SAVE_RESULTS_DIR, f"{video_name_no_ext}.csv")
 
 # weights
-WEIGHTS = os.path.join(ROOT_FOLDER, "Weights", opt.weights)
+WEIGHTS = os.path.join(WEIGHTS_FOLDER, opt.weights)
 
 # Device to use (e.g. "0", "1", "2"... or "cpu")
 if torch.cuda.is_available():
@@ -79,19 +128,21 @@ def numKayakVesselAndBbox(listOfAllObjectsDetected):
     for objectDetected in listOfAllObjectsDetected:
         objectType = objectDetected.objectType
         objectBbox = objectDetected.bbox
-        objectConfident = objectDetected.confidence
+        objectConfidenceScore = objectDetected.confidence
 
         if objectType == 'vessel':
             numVessel += 1
             vesselBbox = [str(round(bboxCoord, 4)) for bboxCoord in objectBbox]
             vesselBboxString += f'{"_".join(vesselBbox)}'
-            vesselBboxString += f"_{objectConfident};"
+            # Append confidence score to the back of the bbox
+            vesselBboxString += f"_{objectConfidenceScore};"
 
         else:
             numKayak += 1
             kayakBbox = [str(round(bboxCoord, 4)) for bboxCoord in objectBbox]
             kayakBboxString += f'{"_".join(kayakBbox)}'
-            kayakBboxString += f"_{objectConfident};"
+            # Append confidence score to the back of the bbox
+            kayakBboxString += f"_{objectConfidenceScore};"
 
     resultList.append(numVessel)
     resultList.append(numKayak)
@@ -155,6 +206,7 @@ def modelInference(framesToInfer):
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+    print(f'Video will be saved to {save_path}')
 
     print(f'fps {fps}')
     print(f'w x h = {w} x {h}')
@@ -245,6 +297,7 @@ def modelInference(framesToInfer):
         _, img0 = cap.read()
 
     vid_writer.release()
+    print(f'Video saved at {save_path}')
 
     endTime = datetime.datetime.now()
     totalTime = endTime - startTime

@@ -70,7 +70,7 @@ for file_name in all_file_name_in_weights_folder:
 
 # we exit the program if no weights file is added to  yolov3/Assignment3/Weights
 if default_weights_name is None:
-    sys.exit('No json file name in yolov3/Assignment3/Weights directory.'
+    sys.exit('No Weights file found in yolov3/Assignment3/Weights directory.'
              '\n'
              'Please place the frames of interest json file into yolov3/Assignment3/Weights directory')
 
